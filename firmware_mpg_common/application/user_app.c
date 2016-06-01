@@ -88,6 +88,16 @@ Promises:
 */
 void UserAppInitialize(void)
 {
+   /* All discrete LEDs to off */
+  LedOff(WHITE);
+  LedOff(PURPLE);
+  LedOff(BLUE);
+  LedOff(CYAN);
+  LedOff(GREEN);
+  LedOff(YELLOW);
+  LedOff(ORANGE);
+  LedOff(RED);
+ 
   
   /* If good initialization, set state to Idle */
   if( 1 )
@@ -137,8 +147,180 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 {
+  static u16 u16BlinkCount = 0;
+  static u8 u8Counter = 0;
+  u16BlinkCount++;
+  
+  if(u16BlinkCount == 500)
+  {
+    u16BlinkCount = 0;
     
-} /* end UserAppSM_Idle() */
+    switch(u8Counter)
+    {
+      case 0:
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOn(RED);
+         break;
+       case 1:
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOn(ORANGE);
+         LedOff(RED);
+         break;         
+       case 2:
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOn(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+         break;        
+       case 3:
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOn(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+         break;         
+       case 4:
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOn(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+         break;         
+        case 5:
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOn(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+         break;         
+     case 6:
+         LedOff(WHITE);
+         LedOn(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+         break;         
+      case 7:
+         LedOn(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+         break;        
+     case 8:
+         LedOff(WHITE);
+         LedOn(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+         break;
+    case 9:
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOn(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+         break;        
+      case 10:   
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOn(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+                  break;
+    case 11:   
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOn(GREEN);
+         LedOff(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+                  break;
+    case 12:   
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOn(YELLOW);
+         LedOff(ORANGE);
+         LedOff(RED);
+                  break;
+    case 13:   
+         LedOff(WHITE);
+         LedOff(PURPLE);
+         LedOff(BLUE);
+         LedOff(CYAN);
+         LedOff(GREEN);
+         LedOff(YELLOW);
+         LedOn(ORANGE);
+         LedOff(RED);
+                  break;
+     case 14:   
+        LedOff(WHITE);
+        LedOff(PURPLE);
+        LedOff(BLUE);
+        LedOff(CYAN);
+        LedOff(GREEN);
+        LedOff(YELLOW);
+        LedOff(ORANGE);
+        LedOn(RED);
+                 break;
+    
+   }
+   u8Counter++;
+ /* Update the counter and roll at 16 */
+   if(u8Counter == 15)
+   {
+      u8Counter = 0;
+   }   
+  }
+   
+}
+
+       
+  /* end UserAppSM_Idle() */
      
 
 /*-------------------------------------------------------------------------------------------------------------------*/
