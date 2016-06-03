@@ -44,6 +44,7 @@ All Global variable names shall start with "G_"
 volatile u32 G_u32UserAppFlags;                       /* Global state flags */
 
 
+
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Existing variables (defined in other files -- should all contain the "extern" keyword) */
 extern volatile u32 G_u32SystemFlags;                  /* From main.c */
@@ -59,8 +60,8 @@ Variable names shall start with "UserApp_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp_StateMachine;            /* The state machine function pointer */
 static u32 UserApp_u32Timeout;                      /* Timeout counter used across states */
-
-
+static u8 UserApp_au8MyName[] = "xusunan";    
+static u8 UserApp_CursorPosition;
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -87,45 +88,32 @@ Promises:
   - 
 */
 void UserAppInitialize(void)
-{
-#ifdef MPGL1
-  /* All discrete LEDs to off */
-  LedOff(WHITE);
-  LedOff(PURPLE);
-  LedOff(BLUE);
-  LedOff(CYAN);
-  LedOff(GREEN);
-  LedOff(YELLOW);
-  LedOff(ORANGE);
-  LedOff(RED);
-  
-  /* Backlight to white */  
-  LedOn(LCD_RED);
-  LedOn(LCD_GREEN);
-  LedOn(LCD_BLUE);
-#endif /* MPGL1 */
+{ 
+  u8 au8Message[] = "Hello world!";
+  LCDMessage(LINE1_START_ADDR, au8Message);
+  /*example*/
+   LCDClearChars(LINE1_START_ADDR + 13, 3);
+   LCDCommand(LCD_CLEAR_CMD);
+   /*white my name on line 1*/
+   LCDMessage(LINE1_START_ADDR, UserApp_au8MyName);
+   /*add button labels */
+  LCDMessage(LINE2_START_ADDR, "0");
+  LCDMessage(LINE2_START_ADDR + 6, "1");
+  LCDMessage(LINE2_START_ADDR + 13, "2");
+  LCDMessage(LINE2_END_ADDR, "3");
+  /* Home the cursor */
+  LCDCommand(LCD_HOME_CMD);  
 
-#ifdef MPGL2
-  /* All discrete LEDs to off */
-  LedOff(RED0);
-  LedOff(RED1);
-  LedOff(RED2);
-  LedOff(RED3);
-  LedOff(GREEN0);
-  LedOff(GREEN1);
-  LedOff(GREEN2);
-  LedOff(GREEN3);
-  LedOff(BLUE0);
-  LedOff(BLUE1);
-  LedOff(BLUE2);
-  LedOff(BLUE3);
-  
-  /* Backlight to white */  
-  LedOn(LCD_BL);
-#endif /* MPGL2 */
-  
+    /* Home the cursor */
+  LCDCommand(LCD_HOME_CMD);  
+  UserApp_CursorPosition = LINE1_START_ADDR;
+    
+    
+    
+    
+    
   /* If good initialization, set state to Idle */
-  if( 1 /* Add condition for good init */)
+  if( 1 )
   {
     UserApp_StateMachine = UserAppSM_Idle;
   }
@@ -134,7 +122,7 @@ void UserAppInitialize(void)
     /* The task isn't properly initialized, so shut it down and don't run */
     UserApp_StateMachine = UserAppSM_FailedInit;
   }
-
+  
 } /* end UserAppInitialize() */
 
 
@@ -169,202 +157,86 @@ State Machine Function Definitions
 **********************************************************************************************************************/
 
 /*-------------------------------------------------------------------------------------------------------------------*/
-/* Update counter and display on LEDs. */
+/* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 {
-  static u16 u16BlinkCount = 0;
-  static u8 u8Counter = 0;
-  static u8 u8ColorIndex = 0;
+  static u8 u8i=0;
+  static bool bCursorOn = FALSE;
   
-#ifdef MPG1
-  u16BlinkCount++;
-  if(u16BlinkCount == 500)
+  if(WasButtonPressed(BUTTON0))
   {
-    u16BlinkCount = 0;
+    ButtonAcknowledge(BUTTON0);
     
-    /* Update the counter and roll at 16 */
-    u8Counter++;
-    if(u8Counter == 16)
+    if(bCursorOn)
     {
-      u8Counter = 0;
-      
-      /* Manage the backlight color */
-      u8ColorIndex++;
-      if(u8ColorIndex == 7)
-      {
-        u8ColorIndex = 0;
-      }
-      
-    /* Parse the current count to set the LEDs.  RED is bit 0, ORANGE is bit 1,
-    YELLOW is bit 2, GREEN is bit 3. */
-    
-    if(u8Counter & 0x01)
-    {
-      LedOn(RED);
+      /* Cursor is on, so turn it off */
+      LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
+      bCursorOn = FALSE;
     }
     else
     {
-      LedOff(RED);
-    }
-
-    if(u8Counter & 0x02)
-    {
-      LedOn(ORANGE);
-    }
-    else
-    {
-      LedOff(ORANGE);
-    }
-
-    if(u8Counter & 0x04)
-    {
-      LedOn(YELLOW);
-    }
-    else
-    {
-      LedOff(YELLOW);
-    }
-
-    if(u8Counter & 0x08)
-    {
-      LedOn(GREEN);
-    }
-    else
-    {
-      LedOff(GREEN);
-    }
-
-      /* Set the backlight color: white (all), purple (blue + red), blue, cyan (blue + green),
-      green, yellow (green + red), red */
-      switch(u8ColorIndex)
-      {
-        case 0: /* white */
-          LedOn(LCD_RED);
-          LedOn(LCD_GREEN);
-          LedOn(LCD_BLUE);
-          break;
-
-        case 1: /* purple */
-          LedOn(LCD_RED);
-          LedOff(LCD_GREEN);
-          LedOn(LCD_BLUE);
-          break;
-          
-        case 2: /* blue */
-          LedOff(LCD_RED);
-          LedOff(LCD_GREEN);
-          LedOn(LCD_BLUE);
-          break;
-          
-        case 3: /* cyan */
-          LedOff(LCD_RED);
-          LedOn(LCD_GREEN);
-          LedOn(LCD_BLUE);
-          break;
-          
-        case 4: /* green */
-          LedOff(LCD_RED);
-          LedOn(LCD_GREEN);
-          LedOff(LCD_BLUE);
-          break;
-          
-        case 5: /* yellow */
-          LedOn(LCD_RED);
-          LedOn(LCD_GREEN);
-          LedOff(LCD_BLUE);
-          break;
-          
-        case 6: /* red */
-          LedOn(LCD_RED);
-          LedOff(LCD_GREEN);
-          LedOff(LCD_BLUE);
-          break;
-          
-        default: /* off */
-          LedOff(LCD_RED);
-          LedOff(LCD_GREEN);
-          LedOff(LCD_BLUE);
-          break;
-      } /* end switch */
-    } /* end if(u8Counter == 16) */
-    
-  } /* end if(u16BlinkCount == 500) */
-#endif /* MPGL1 */
-
-#ifdef MPG2
-  u16BlinkCount++;
-  if(u16BlinkCount == 500)
-  {
-    u16BlinkCount = 0;
-    
-    /* Update the counter and roll at 16 */
-    u8Counter++;
-    if(u8Counter == 16)
-    {
-      u8Counter = 0;
-      
-      LedOff((LedNumberType)(RED3 + (4 * u8ColorIndex)));
-      LedOff((LedNumberType)(RED2 + (4 * u8ColorIndex)));
-      LedOff((LedNumberType)(RED1 + (4 * u8ColorIndex)));
-      LedOff((LedNumberType)(RED0 + (4 * u8ColorIndex)));
-      
-      u8ColorIndex++;
-      if(u8ColorIndex == 3)
-      {
-        u8ColorIndex = 0;
-      }
-    } /* end if(u8Counter == 16) */
-    
-    /* Parse the current count to set the LEDs.  From leds.h we see the enum for red, green and blue
-    are seperated by 4 so use this with u8ColorIndex to */
-    
-    if(u8Counter & 0x01)
-    {
-      LedOn((LedNumberType)(RED3 + (4 * u8ColorIndex)));
-    }
-    else
-    {
-      LedOff(RED3 + (4 * u8ColorIndex));
-    }
-
-    if(u8Counter & 0x02)
-    {
-      LedOn(RED2 + (4 * u8ColorIndex));
-    }
-    else
-    {
-      LedOff(RED2 + (4 * u8ColorIndex));
-    }
-
-    if(u8Counter & 0x04)
-    {
-      LedOn(RED1 + (4 * u8ColorIndex));
-    }
-    else
-    {
-      LedOff(RED1 + (4 * u8ColorIndex));
-    }
-
-    if(u8Counter & 0x08)
-    {
-      LedOn(RED0 + (4 * u8ColorIndex));
-    }
-    else
-    {
-      LedOff(RED0 + (4 * u8ColorIndex));
-    }
-    
-  } /* end if(u16BlinkCount == 500) */
-#endif /* MPG2 */  
+      /* Cursor is off, so turn it on */
+      LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON | LCD_DISPLAY_CURSOR | LCD_DISPLAY_BLINK);
+      bCursorOn = TRUE;
+   }
+  }
   
-} /* end UserAppSM_Idle() */
+  /* BUTTON3 moves the cursor forward one position */
+  if(WasButtonPressed(BUTTON3))
+  {
+    //ButtonAcknowledge(BUTTON3);
+    
+    /* Handle the two special cases or just the regular case */
+    if(UserApp_CursorPosition == LINE1_END_ADDR)
+    {
+      UserApp_CursorPosition = LINE2_START_ADDR;
+    }
 
+    else if (UserApp_CursorPosition == LINE2_END_ADDR)
+    {
+      UserApp_CursorPosition = LINE1_START_ADDR;
+    }
+    
+    /* Otherwise just increment one space */
+    else
+    {
+      UserApp_CursorPosition++;
+    }   
+ }
+ if(WasButtonPressed(BUTTON3))
+  {
+    ButtonAcknowledge(BUTTON3);
+    u8i++;
+    LCDMessage(LINE1_START_ADDR+u8i-1, " ");
+   
+    LCDMessage(LINE1_START_ADDR+u8i, UserApp_au8MyName);
+   
+  }
+  
+
+  if(WasButtonPressed(BUTTON2))
+  {
+    ButtonAcknowledge(BUTTON2);
+   
+     u8i--;
+    LCDMessage(LINE1_START_ADDR+u8i+7, " ");
+    LCDMessage(LINE1_START_ADDR+u8i, UserApp_au8MyName);
+  
+  }
+  
+  
+  
+  
+  
+  
+    
+ }/* end UserAppSM_Idle() */
+     
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
 static void UserAppSM_Error(void)          
 {
-  UserApp_StateMachine = UserAppSM_Idle;
   
 } /* end UserAppSM_Error() */
 
