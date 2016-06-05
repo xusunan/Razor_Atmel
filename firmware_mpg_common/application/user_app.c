@@ -89,9 +89,9 @@ Promises:
 void UserAppInitialize(void)
 {
    /* Backlight to  */  
-  //LedOff(LCD_RED);
-  //LedOn(LCD_GREEN);
-  //LedOn(LCD_BLUE); 
+  LedOff(LCD_RED);
+  LedOn(LCD_GREEN);
+  LedOn(LCD_BLUE); 
   LCDMessage(LINE1_START_ADDR, UserApp_au8MyName);
   LCDClearChars(LINE1_START_ADDR + 10, 11); 
   //LCDMessage(LINE2_START_ADDR, G_au8DebugScanfBuffer);
