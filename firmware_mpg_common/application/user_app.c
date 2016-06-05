@@ -143,11 +143,12 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 { 
+    static u8 u8charIndex=0;
     static u8 flag=FALSE;
     static u8 BlinkCount=0;
     u8 u8CharCount;
     BlinkCount++;
-    static u8 u8i=0;
+  
     if(BlinkCount==10)
     {
       BlinkCount=0;
@@ -162,15 +163,25 @@ static void UserAppSM_Idle(void)
           {
             for(u8 i=0;i<u8CharCount;i++)
             {
-               LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
-            }
-         }
-          flag=FALSE;
+                LCDMessage(LINE2_START_ADDR+u8charIndex,UserApp_au8UserInputBuffer);
+                 u8charIndex++;
+               if(u8charIndex==21)
+                {
+                  LCDClearChars(LINE2_START_ADDR , 20); 
+                  LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
+                  u8charIndex=1;
+                }
+                 
+                 
+               }
+        
+        } 
+        flag=FALSE;
     }
     
-
+}
  
-} /* end UserAppSM_Idle() */
+ /* end UserAppSM_Idle() */
      
 
 /*-------------------------------------------------------------------------------------------------------------------*/
