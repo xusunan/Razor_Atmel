@@ -150,6 +150,7 @@ static void UserAppSM_Idle(void)
       u8 u8CharCount;
       BlinkCount++;
       static u8 u8NumCharsMessage[] = "\n\rCharacters in buffer: \n";
+      static u8 u8NumCharsMessage2[] = "\n\rThe buffer is empty";
       if(BlinkCount==10)
       {
       BlinkCount=0;
@@ -195,10 +196,14 @@ static void UserAppSM_Idle(void)
       DebugPrintf(u8NumCharsMessage);
       DebugPrintNumber(u8counter);
      // DebugLineFeed();
-      
       }
+       if(WasButtonPressed(BUTTON2))
+      {
+        ButtonAcknowledge(BUTTON2);
+        DebugPrintf(u8NumCharsMessage2);
+        u8counter=0;
 
-
+      }
     
 
  
