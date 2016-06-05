@@ -143,20 +143,20 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 { 
-   static u8 counter=0;
-    static u8 u8charIndex=0;
-    static u8 flag=FALSE;
-    static u8 BlinkCount=0;
-    u8 u8CharCount;
-    BlinkCount++;
-  
-    if(BlinkCount==10)
-    {
+      static u8 u8counter=0;
+      static u8 u8charIndex=0;
+      static u8 flag=FALSE;
+      static u8 BlinkCount=0;
+      u8 u8CharCount;
+      BlinkCount++;
+      static u8 u8NumCharsMessage[] = "\n\rCharacters in buffer: \n";
+      if(BlinkCount==10)
+      {
       BlinkCount=0;
       flag=TRUE;
-    }
-    if(flag)
-    {
+      }
+      if(flag)
+      {
           /* Read the buffer and print the contents */
           u8CharCount = DebugScanf(UserApp_au8UserInputBuffer);
           UserApp_au8UserInputBuffer[u8CharCount] = '\0';
@@ -166,28 +166,39 @@ static void UserAppSM_Idle(void)
             {
                 LCDMessage(LINE2_START_ADDR+u8charIndex,UserApp_au8UserInputBuffer);
                  u8charIndex++;
+                
                if(u8charIndex==21)
                 {
                   LCDClearChars(LINE2_START_ADDR , 20); 
                   LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
                   u8charIndex=1;
                 }
+                u8counter++;
             }
                  
-            counter++;     
+                 
        } 
         flag=FALSE;
-    }
-    
-  if(WasButtonPressed(BUTTON0))
-  {
-    ButtonAcknowledge(BUTTON0);
-    LCDClearChars(LINE2_START_ADDR , 20);
-    u8charIndex=0;
-   // LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
-  }
-    
-    
+      }
+
+      if(WasButtonPressed(BUTTON0))
+      {
+      ButtonAcknowledge(BUTTON0);
+      LCDClearChars(LINE2_START_ADDR , 20);
+      u8charIndex=0;
+
+      }
+
+      if(WasButtonPressed(BUTTON1))
+      {
+      ButtonAcknowledge(BUTTON1);
+      DebugPrintf(u8NumCharsMessage);
+      DebugPrintNumber(u8counter);
+     // DebugLineFeed();
+      
+      }
+
+
     
 
  
