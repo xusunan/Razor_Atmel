@@ -61,6 +61,7 @@ static fnCode_type UserApp_StateMachine;            /* The state machine functio
 static u32 UserApp_u32Timeout;                      /* Timeout counter used across states */
 static u8 UserApp_au8UserInputBuffer[USER_INPUT_BUFFER_SIZE];  /* Char buffer */
 static u8 UserApp_au8MyName[] = "A3.xusunan";
+static u8 u8NameBuffer[200];
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -94,7 +95,7 @@ void UserAppInitialize(void)
   LedOn(LCD_BLUE); 
   LCDMessage(LINE1_START_ADDR, UserApp_au8MyName);
   LCDClearChars(LINE1_START_ADDR + 10, 11); 
-  
+ 
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -143,6 +144,7 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 { 
+      static u8 u8counter2=0;
       static u8 u8counter=0;
       static u8 u8charIndex=0;
       static u8 flag=FALSE;
@@ -150,7 +152,15 @@ static void UserAppSM_Idle(void)
       u8 u8CharCount;
       BlinkCount++;
       static u8 u8NumCharsMessage[] = "\n\rCharacters in buffer: \n";
-      static u8 u8NumCharsMessage2[] = "\n\rThe buffer is empty";
+      static u8 u8NumCharsMessage2[] = "\n\rThe buffer is empty:";
+      static u8 u8CurrentMessage[] = "\n\rmessage is:\n";
+    //  u8 UserApp_u8NameBuffer[]="";
+      u8 Myname[]="xusunan";
+    
+      u8 i=0;
+      u8 j=0;
+      static u8 u8NameCount=0;
+         
       if(BlinkCount==10)
       {
       BlinkCount=0;
@@ -175,6 +185,7 @@ static void UserAppSM_Idle(void)
                   u8charIndex=1;
                 }
                 u8counter++;
+               u8counter2++;
             }
                  
                  
@@ -202,8 +213,36 @@ static void UserAppSM_Idle(void)
         ButtonAcknowledge(BUTTON2);
         DebugPrintf(u8NumCharsMessage2);
         u8counter=0;
-
       }
+      
+      for(i=0;i<7;i++)
+      {
+        for(j=0;j<u8counter2;j++)
+        {
+          if(Myname[i]==UserApp_au8UserInputBuffer[j])
+          {
+             u8NameBuffer[i]=UserApp_au8UserInputBuffer[j];
+            //u8NameBuffer[i+1]='\0';
+          }
+          i++;
+          if( i==7)
+           {
+              i=0;
+              u8NameCount++;
+       
+             }
+          
+          } 
+      }
+     // if(WasButtonPressed(BUTTON3))
+    //  {
+     //   ButtonAcknowledge(BUTTON3);
+      //  DebugPrintf(u8CurrentMessage);
+      //  DebugPrintf(u8NameBuffer);
+      
+     // }
+      
+        
     
 
  
