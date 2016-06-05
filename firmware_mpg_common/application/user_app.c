@@ -59,8 +59,8 @@ Variable names shall start with "UserApp_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp_StateMachine;            /* The state machine function pointer */
 static u32 UserApp_u32Timeout;                      /* Timeout counter used across states */
-
- static u8 UserApp_au8MyName[] = "A3.xusunan";
+static u8 UserApp_au8UserInputBuffer[USER_INPUT_BUFFER_SIZE];  /* Char buffer */
+static u8 UserApp_au8MyName[] = "A3.xusunan";
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -88,13 +88,13 @@ Promises:
 */
 void UserAppInitialize(void)
 {
-   /* Backlight to  */  
+   /* Backlight to  CYAN*/  
   LedOff(LCD_RED);
   LedOn(LCD_GREEN);
   LedOn(LCD_BLUE); 
   LCDMessage(LINE1_START_ADDR, UserApp_au8MyName);
   LCDClearChars(LINE1_START_ADDR + 10, 11); 
-  //LCDMessage(LINE2_START_ADDR, G_au8DebugScanfBuffer);
+  
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -143,18 +143,26 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 { 
-  //static u8 u8NumCharsMessage[] = "\n\rCharacters in buffer: ";
-  
-  /* Print message with number of characters in scanf buffer */
- // if(WasButtonPressed(BUTTON1))
- // {
-   // ButtonAcknowledge(BUTTON1);
+    static u8 flag=FALSE;
+    static u8 counter;
+    u8 u8CharCount;
+    counter++;
+    if(counter==10)
+    {
+      counter=0;
+      flag=TRUE;
+    }
+    if(flag)
+    {
+          /* Read the buffer and print the contents */
+          u8CharCount = DebugScanf(UserApp_au8UserInputBuffer);
+          UserApp_au8UserInputBuffer[u8CharCount] = '\0';
+          //LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
+          flag=FALSE;
+    }
     
-   // DebugPrintNumber(G_u8DebugScanfCharCount);
-    
-  //  DebugLineFeed();
- // }
-    
+
+ 
 } /* end UserAppSM_Idle() */
      
 
