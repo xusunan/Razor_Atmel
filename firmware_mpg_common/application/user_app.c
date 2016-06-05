@@ -143,6 +143,7 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 { 
+   static u8 counter=0;
     static u8 u8charIndex=0;
     static u8 flag=FALSE;
     static u8 BlinkCount=0;
@@ -171,9 +172,10 @@ static void UserAppSM_Idle(void)
                   LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
                   u8charIndex=1;
                 }
+            }
                  
-                 
-               }
+            counter++;     
+              
         
         } 
         flag=FALSE;
