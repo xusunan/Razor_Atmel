@@ -234,13 +234,13 @@ static void UserAppSM_Idle(void)
           
           } 
       }
-     // if(WasButtonPressed(BUTTON3))
-    //  {
-     //   ButtonAcknowledge(BUTTON3);
-      //  DebugPrintf(u8CurrentMessage);
-      //  DebugPrintf(u8NameBuffer);
+      if(WasButtonPressed(BUTTON3))
+     {
+        ButtonAcknowledge(BUTTON3);
+       DebugPrintf(u8CurrentMessage);
+        DebugPrintf(u8NameBuffer);
       
-     // }
+     }
       
         
     
