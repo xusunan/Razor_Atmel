@@ -175,15 +175,23 @@ static void UserAppSM_Idle(void)
             }
                  
             counter++;     
-              
-        
-        } 
+       } 
         flag=FALSE;
     }
     
-}
+  if(WasButtonPressed(BUTTON0))
+  {
+    ButtonAcknowledge(BUTTON0);
+    LCDClearChars(LINE2_START_ADDR , 20);
+    u8charIndex=0;
+   // LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
+  }
+    
+    
+    
+
  
- /* end UserAppSM_Idle() */
+}/* end UserAppSM_Idle() */
      
 
 /*-------------------------------------------------------------------------------------------------------------------*/
