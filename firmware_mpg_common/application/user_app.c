@@ -44,7 +44,6 @@ All Global variable names shall start with "G_"
 volatile u32 G_u32UserAppFlags;                       /* Global state flags */
 
 
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Existing variables (defined in other files -- should all contain the "extern" keyword) */
 extern volatile u32 G_u32SystemFlags;                  /* From main.c */
@@ -52,16 +51,16 @@ extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
 
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
-
-
+extern u8 G_au8DebugScanfBuffer[];                     /* From debug.c */
+extern u8 G_u8DebugScanfCharCount;                     /* From debug.c  */
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
 Variable names shall start with "UserApp_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp_StateMachine;            /* The state machine function pointer */
 static u32 UserApp_u32Timeout;                      /* Timeout counter used across states */
-static u8 UserApp_au8MyName[] = "xusunan";    
-static u8 UserApp_CursorPosition;
+
+ static u8 UserApp_au8MyName[] = "A3.xusunan";
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -88,30 +87,14 @@ Promises:
   - 
 */
 void UserAppInitialize(void)
-{ 
-  u8 au8Message[] = "Hello world!";
-  LCDMessage(LINE1_START_ADDR, au8Message);
-  /*example*/
-   LCDClearChars(LINE1_START_ADDR + 13, 3);
-   LCDCommand(LCD_CLEAR_CMD);
-   /*white my name on line 1*/
-   LCDMessage(LINE1_START_ADDR, UserApp_au8MyName);
-   /*add button labels */
-  LCDMessage(LINE2_START_ADDR, "0");
-  LCDMessage(LINE2_START_ADDR + 6, "1");
-  LCDMessage(LINE2_START_ADDR + 13, "2");
-  LCDMessage(LINE2_END_ADDR, "3");
-  /* Home the cursor */
-  LCDCommand(LCD_HOME_CMD);  
-
-    /* Home the cursor */
-  LCDCommand(LCD_HOME_CMD);  
-  UserApp_CursorPosition = LINE1_START_ADDR;
-    
-    
-    
-    
-    
+{
+   /* Backlight to  */  
+  //LedOff(LCD_RED);
+  //LedOn(LCD_GREEN);
+  //LedOn(LCD_BLUE); 
+  LCDMessage(LINE1_START_ADDR, UserApp_au8MyName);
+  LCDClearChars(LINE1_START_ADDR + 10, 11); 
+  //LCDMessage(LINE2_START_ADDR, G_au8DebugScanfBuffer);
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -122,7 +105,7 @@ void UserAppInitialize(void)
     /* The task isn't properly initialized, so shut it down and don't run */
     UserApp_StateMachine = UserAppSM_FailedInit;
   }
-  
+
 } /* end UserAppInitialize() */
 
 
@@ -159,78 +142,20 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
-{
-  static u8 u8i=0;
-  static bool bCursorOn = FALSE;
+{ 
+  //static u8 u8NumCharsMessage[] = "\n\rCharacters in buffer: ";
   
-  if(WasButtonPressed(BUTTON0))
-  {
-    ButtonAcknowledge(BUTTON0);
+  /* Print message with number of characters in scanf buffer */
+ // if(WasButtonPressed(BUTTON1))
+ // {
+   // ButtonAcknowledge(BUTTON1);
     
-    if(bCursorOn)
-    {
-      /* Cursor is on, so turn it off */
-      LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
-      bCursorOn = FALSE;
-    }
-    else
-    {
-      /* Cursor is off, so turn it on */
-      LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON | LCD_DISPLAY_CURSOR | LCD_DISPLAY_BLINK);
-      bCursorOn = TRUE;
-   }
-  }
-  
-  /* BUTTON3 moves the cursor forward one position */
-  if(WasButtonPressed(BUTTON3))
-  {
-    //ButtonAcknowledge(BUTTON3);
+   // DebugPrintNumber(G_u8DebugScanfCharCount);
     
-    /* Handle the two special cases or just the regular case */
-    if(UserApp_CursorPosition == LINE1_END_ADDR)
-    {
-      UserApp_CursorPosition = LINE2_START_ADDR;
-    }
-
-    else if (UserApp_CursorPosition == LINE2_END_ADDR)
-    {
-      UserApp_CursorPosition = LINE1_START_ADDR;
-    }
+  //  DebugLineFeed();
+ // }
     
-    /* Otherwise just increment one space */
-    else
-    {
-      UserApp_CursorPosition++;
-    }   
- }
- if(WasButtonPressed(BUTTON3))
-  {
-    ButtonAcknowledge(BUTTON3);
-    u8i++;
-    LCDMessage(LINE1_START_ADDR+u8i-1, " ");
-   
-    LCDMessage(LINE1_START_ADDR+u8i, UserApp_au8MyName);
-   
-  }
-  
-
-  if(WasButtonPressed(BUTTON2))
-  {
-    ButtonAcknowledge(BUTTON2);
-   
-     u8i--;
-    LCDMessage(LINE1_START_ADDR+u8i+7, " ");
-    LCDMessage(LINE1_START_ADDR+u8i, UserApp_au8MyName);
-  
-  }
-  
-  
-  
-  
-  
-  
-    
- }/* end UserAppSM_Idle() */
+} /* end UserAppSM_Idle() */
      
 
 /*-------------------------------------------------------------------------------------------------------------------*/
