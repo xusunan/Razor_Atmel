@@ -144,12 +144,13 @@ State Machine Function Definitions
 static void UserAppSM_Idle(void)
 { 
     static u8 flag=FALSE;
-    static u8 counter;
+    static u8 BlinkCount=0;
     u8 u8CharCount;
-    counter++;
-    if(counter==10)
+    BlinkCount++;
+    static u8 u8i=0;
+    if(BlinkCount==10)
     {
-      counter=0;
+      BlinkCount=0;
       flag=TRUE;
     }
     if(flag)
@@ -157,7 +158,13 @@ static void UserAppSM_Idle(void)
           /* Read the buffer and print the contents */
           u8CharCount = DebugScanf(UserApp_au8UserInputBuffer);
           UserApp_au8UserInputBuffer[u8CharCount] = '\0';
-          //LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
+          if(u8CharCount!=0);
+          {
+            for(u8 i=0;i<u8CharCount;i++)
+            {
+               LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
+            }
+         }
           flag=FALSE;
     }
     
