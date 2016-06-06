@@ -35,6 +35,7 @@ Runs current task state.  Should only be called once in main loop.
 **********************************************************************************************************************/
 
 #include "configuration.h"
+#include "string.h"
 
 /***********************************************************************************************************************
 Global variable definitions with scope across entire project.
@@ -42,13 +43,16 @@ All Global variable names shall start with "G_"
 ***********************************************************************************************************************/
 /* New variables */
 volatile u32 G_u32UserAppFlags;                       /* Global state flags */
-
+volatile u16 BlinkCount2 =0;         
+volatile u8 flag2=FALSE;
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Existing variables (defined in other files -- should all contain the "extern" keyword) */
 extern volatile u32 G_u32SystemFlags;                  /* From main.c */
-extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
-
+extern volatile u32 G_u32ApplicationFlags;
+ 
+//extern volatile u16 BlinkCount2 =0;         
+//extern volatile u8 flag2=FALSE;
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
 extern u8 G_au8DebugScanfBuffer[];                     /* From debug.c */
@@ -171,6 +175,7 @@ static void UserAppSM_Idle(void)
           /* Read the buffer and print the contents */
           u8CharCount = DebugScanf(UserApp_au8UserInputBuffer);
           UserApp_au8UserInputBuffer[u8CharCount] = '\0';
+          /*each character display on the LCD*/
           if(u8CharCount!=0);
           {
             for(u8 i=0;i<u8CharCount;i++)
@@ -192,7 +197,7 @@ static void UserAppSM_Idle(void)
        } 
         flag=FALSE;
       }
-
+/*if button 0 is pressed  clear the line.2*/
       if(WasButtonPressed(BUTTON0))
       {
       ButtonAcknowledge(BUTTON0);
@@ -200,7 +205,7 @@ static void UserAppSM_Idle(void)
       u8charIndex=0;
 
       }
-
+   /*if button 1 is pressed  printf the toatal of characters in tera term*/
       if(WasButtonPressed(BUTTON1))
       {
       ButtonAcknowledge(BUTTON1);
@@ -208,40 +213,56 @@ static void UserAppSM_Idle(void)
       DebugPrintNumber(u8counter);
      // DebugLineFeed();
       }
+       /*if button 2 is pressed  clear the total of characters*/
        if(WasButtonPressed(BUTTON2))
       {
         ButtonAcknowledge(BUTTON2);
         DebugPrintf(u8NumCharsMessage2);
         u8counter=0;
       }
-      
+      /*check out my name from a string of characters*/
       for(i=0;i<7;i++)
       {
         for(j=0;j<u8counter2;j++)
         {
-          if(Myname[i]==UserApp_au8UserInputBuffer[j])
+          if(Myname[i]==UserApp_au8UserInputBuffer[j]||(Myname[i]==UserApp_au8UserInputBuffer[j]+32))
           {
+            
              u8NameBuffer[i]=UserApp_au8UserInputBuffer[j];
+          
             //u8NameBuffer[i+1]='\0';
           }
           i++;
           if( i==7)
            {
-              i=0;
+             i=0;
               u8NameCount++;
+             // flag2=TRUE;
        
-             }
-          
-          } 
+            }
+          //for(i=0;i<7;i++)
+         // {
+            if((u8NameBuffer[i],Myname[i])==0)
+           
+            {
+              flag2=TRUE;
+              i++;
+           }
+          flag2=FALSE;
+         // } 
+        }
       }
+      /*if button 3 is pressed printf my name*/
       if(WasButtonPressed(BUTTON3))
      {
         ButtonAcknowledge(BUTTON3);
        DebugPrintf(u8CurrentMessage);
         DebugPrintf(u8NameBuffer);
+        
       
      }
-      
+     
+     
         
     
 
