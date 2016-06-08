@@ -35,7 +35,6 @@ Runs current task state.  Should only be called once in main loop.
 **********************************************************************************************************************/
 
 #include "configuration.h"
-#include "string.h"
 
 /***********************************************************************************************************************
 Global variable definitions with scope across entire project.
@@ -43,29 +42,31 @@ All Global variable names shall start with "G_"
 ***********************************************************************************************************************/
 /* New variables */
 volatile u32 G_u32UserAppFlags;                       /* Global state flags */
-volatile u16 BlinkCount2 =0;         
-volatile u8 flag2=FALSE;
+/* Existing variables (defined in other files -- should all contain the "extern" keyword) */
+extern AntSetupDataType G_stAntSetupData;                         /* From ant.c */
+
+extern u32 G_u32AntApiCurrentDataTimeStamp;                       /* From ant_api.c */
+extern AntApplicationMessageType G_eAntApiCurrentMessageClass;    /* From ant_api.c */
+extern u8 G_au8AntApiCurrentData[ANT_APPLICATION_MESSAGE_BYTES];  /* From ant_api.c */
+
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Existing variables (defined in other files -- should all contain the "extern" keyword) */
 extern volatile u32 G_u32SystemFlags;                  /* From main.c */
-extern volatile u32 G_u32ApplicationFlags;
- 
-//extern volatile u16 BlinkCount2 =0;         
-//extern volatile u8 flag2=FALSE;
+extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
+
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
-extern u8 G_au8DebugScanfBuffer[];                     /* From debug.c */
-extern u8 G_u8DebugScanfCharCount;                     /* From debug.c  */
+
+
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
 Variable names shall start with "UserApp_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp_StateMachine;            /* The state machine function pointer */
 static u32 UserApp_u32Timeout;                      /* Timeout counter used across states */
-static u8 UserApp_au8UserInputBuffer[USER_INPUT_BUFFER_SIZE];  /* Char buffer */
-static u8 UserApp_au8MyName[] = "A3.xusunan";
-static u8 u8NameBuffer[200];
+
+
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -93,16 +94,22 @@ Promises:
 */
 void UserAppInitialize(void)
 {
-   /* Backlight to  CYAN*/  
-  LedOff(LCD_RED);
-  LedOn(LCD_GREEN);
-  LedOn(LCD_BLUE); 
-  LCDMessage(LINE1_START_ADDR, UserApp_au8MyName);
-  LCDClearChars(LINE1_START_ADDR + 10, 11); 
- 
+  
+  /* Configure ANT for this application */
+  G_stAntSetupData.AntChannel          = ANT_CHANNEL_USERAPP;
+  G_stAntSetupData.AntSerialLo         = ANT_SERIAL_LO_USERAPP;
+  G_stAntSetupData.AntSerialHi         = ANT_SERIAL_HI_USERAPP;
+  G_stAntSetupData.AntDeviceType       = ANT_DEVICE_TYPE_USERAPP;
+  G_stAntSetupData.AntTransmissionType = ANT_TRANSMISSION_TYPE_USERAPP;
+  G_stAntSetupData.AntChannelPeriodLo  = ANT_CHANNEL_PERIOD_LO_USERAPP;
+  G_stAntSetupData.AntChannelPeriodHi  = ANT_CHANNEL_PERIOD_HI_USERAPP;
+  G_stAntSetupData.AntFrequency        = ANT_FREQUENCY_USERAPP;
+  G_stAntSetupData.AntTxPower          = ANT_TX_POWER_USERAPP;
+
   /* If good initialization, set state to Idle */
-  if( 1 )
+  if( AntChannelConfig(ANT_MASTER) )
   {
+    AntOpenChannel();
     UserApp_StateMachine = UserAppSM_Idle;
   }
   else
@@ -110,7 +117,6 @@ void UserAppInitialize(void)
     /* The task isn't properly initialized, so shut it down and don't run */
     UserApp_StateMachine = UserAppSM_FailedInit;
   }
-
 } /* end UserAppInitialize() */
 
 
@@ -147,127 +153,136 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
-{ 
-      static u8 u8counter2=0;
-      static u8 u8counter=0;
-      static u8 u8charIndex=0;
-      static u8 flag=FALSE;
-      static u8 BlinkCount=0;
-      u8 u8CharCount;
-      BlinkCount++;
-      static u8 u8NumCharsMessage[] = "\n\rCharacters in buffer: \n";
-      static u8 u8NumCharsMessage2[] = "\n\rThe buffer is empty:";
-      static u8 u8CurrentMessage[] = "\n\rmessage is:\n";
-    //  u8 UserApp_u8NameBuffer[]="";
-      u8 Myname[]="xusunan";
-    
-      u8 i=0;
-      u8 j=0;
-      static u8 u8NameCount=0;
-         
-      if(BlinkCount==10)
-      {
-      BlinkCount=0;
-      flag=TRUE;
-      }
-      if(flag)
-      {
-          /* Read the buffer and print the contents */
-          u8CharCount = DebugScanf(UserApp_au8UserInputBuffer);
-          UserApp_au8UserInputBuffer[u8CharCount] = '\0';
-          /*each character display on the LCD*/
-          if(u8CharCount!=0);
-          {
-            for(u8 i=0;i<u8CharCount;i++)
-            {
-                LCDMessage(LINE2_START_ADDR+u8charIndex,UserApp_au8UserInputBuffer);
-                 u8charIndex++;
-                
-               if(u8charIndex==21)
-                {
-                  LCDClearChars(LINE2_START_ADDR , 20); 
-                  LCDMessage(LINE2_START_ADDR,UserApp_au8UserInputBuffer);
-                  u8charIndex=1;
-                }
-                u8counter++;
-               u8counter2++;
-            }
-                 
-                 
-       } 
-        flag=FALSE;
-      }
-/*if button 0 is pressed  clear the line.2*/
-      if(WasButtonPressed(BUTTON0))
-      {
-      ButtonAcknowledge(BUTTON0);
-      LCDClearChars(LINE2_START_ADDR , 20);
-      u8charIndex=0;
+{
+  u8 NumberToAscii(u32 u32Number_,u8*pu8AsciiString_);
+   static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
+   u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
+   u8  au8LastData[8]={0};
+  
+   //LCDClearChars(LINE1_START_ADDR , 20);
+  if( AntReadData() )
+  {
+     static u8 u8TimeStamp[]=0;
+    /* New data message: check what it is */
+    if(G_eAntApiCurrentMessageClass == ANT_DATA)
+    {
+            /* We got some data */
+            /* New data message: check what it is */
+            LedOff(RED); 
+            LedOff(ORANGE); 
+            LedOff(YELLOW); 
+            LedOff(GREEN);
+            LedOff(CYAN);
+            LedOff(BLUE);
+            LedOff(PURPLE);
+            LedOff(WHITE);
 
-      }
-   /*if button 1 is pressed  printf the toatal of characters in tera term*/
-      if(WasButtonPressed(BUTTON1))
-      {
-      ButtonAcknowledge(BUTTON1);
-      DebugPrintf(u8NumCharsMessage);
-      DebugPrintNumber(u8counter);
-     // DebugLineFeed();
-      }
-       /*if button 2 is pressed  clear the total of characters*/
-       if(WasButtonPressed(BUTTON2))
-      {
-        ButtonAcknowledge(BUTTON2);
-        DebugPrintf(u8NumCharsMessage2);
-        u8counter=0;
-      }
-      /*check out my name from a string of characters*/
-      for(i=0;i<7;i++)
-      {
-        for(j=0;j<u8counter2;j++)
-        {
-          if(Myname[i]==UserApp_au8UserInputBuffer[j]||(Myname[i]==UserApp_au8UserInputBuffer[j]+32))
-          {
+            if( G_au8AntApiCurrentData[0] == 0xFF )
+            {
+            LedOn(WHITE);
+            }   
+
+            if( G_au8AntApiCurrentData[1] == 0xFF )
+            {
+            LedOn(PURPLE);
+            } 
+            if( G_au8AntApiCurrentData[2] == 0xFF )
+            {
+            LedOn(BLUE);
+            }  
+            if( G_au8AntApiCurrentData[3] == 0xFF )
+            {
+            LedOn(CYAN);
+            }
+            if( G_au8AntApiCurrentData[4] ==0xFF )
+            {
+            LedOn(GREEN);
+            } 
+            if( G_au8AntApiCurrentData[5] == 0xFF )
+            {
+            LedOn(YELLOW);
+            } 
+            if( G_au8AntApiCurrentData[6] == 0xFF )
+            {
+            LedOn(ORANGE);
+            } 
+            if( G_au8AntApiCurrentData[7] == 0xFF )
+            {
+            LedOn(RED);
+            }
+
+            /* We got some data: parse it into au8DataContent */
+            for(u8 i = 0; i < ANT_DATA_BYTES; i++)
+            {
+            au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
+            au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
+            au8LastData[i]= au8DataContent[i];
+
+            }
+
+            LCDMessage(LINE2_START_ADDR,au8DataContent ); 
+
+    
+            /*check data if change*/
+            for(u8 j = 0; j < 8;j++)
+            {
+            if(au8LastData[j]!=G_au8AntApiCurrentData[j])
+
+            au8LastData[j]=G_au8AntApiCurrentData[j];
+            NumberToAscii(G_u32AntApiCurrentDataTimeStamp,u8TimeStamp);
+            LCDMessage(LINE1_START_ADDR,u8TimeStamp);
+            LCDClearChars(LINE1_START_ADDR +5, 13);
+
+            }
+    }
+            else if(G_eAntApiCurrentMessageClass == ANT_TICK)
+            {
+            /* A channel period has gone by: typically this is when new data should be queued to be sent */
+            /*updata the message counter*/
+
+
+            /* Update and queue the new message data */
+            au8TestMessage[7]++;
+            if(au8TestMessage[7] == 0)
+            {
+            au8TestMessage[6]++;
+            }
+            if(au8TestMessage[6] == 0)
+            {
+            au8TestMessage[5]++;
+            }
             
-             u8NameBuffer[i]=UserApp_au8UserInputBuffer[j];
-          
-            //u8NameBuffer[i+1]='\0';
-          }
-          i++;
-          if( i==7)
-           {
-             i=0;
-              u8NameCount++;
-             // flag2=TRUE;
-       
-            }
-          //for(i=0;i<7;i++)
-         // {
-            if((u8NameBuffer[i],Myname[i])==0)
-           
-            {
-              flag2=TRUE;
-              i++;
-           }
-          flag2=FALSE;
-         // } 
-        }
-      }
-      /*if button 3 is pressed printf my name*/
-      if(WasButtonPressed(BUTTON3))
-     {
-        ButtonAcknowledge(BUTTON3);
-       DebugPrintf(u8CurrentMessage);
-        DebugPrintf(u8NameBuffer);
-        
-      
-     }
-     
-     
-        
-    
+            
 
- 
-}/* end UserAppSM_Idle() */
+     /*    now check the current*/ 
+  /* Check all the buttons and update au8TestMessage according to the button state */ 
+  au8TestMessage[0] = 0x00;
+  if( IsButtonPressed(BUTTON0) )
+  {
+    au8TestMessage[0] = 0xff;
+  }
+    au8TestMessage[1] = 0x00;
+  if( IsButtonPressed(BUTTON1) )
+  {
+    au8TestMessage[1] = 0xff;
+  }
+   au8TestMessage[2] = 0x00;
+  if( IsButtonPressed(BUTTON2) )
+  {
+    au8TestMessage[2] = 0xff;
+  }
+     au8TestMessage[3] = 0x00;
+  if( IsButtonPressed(BUTTON3) )
+  {
+    au8TestMessage[3] = 0xff;
+  }
+  
+    AntQueueBroadcastMessage(au8TestMessage);
+   }
+  
+  }
+    /* end AntReadData() */
+} /* end UserAppSM_Idle() */
      
 
 /*-------------------------------------------------------------------------------------------------------------------*/
