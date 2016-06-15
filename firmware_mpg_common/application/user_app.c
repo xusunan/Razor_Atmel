@@ -64,16 +64,18 @@ static u32 UserApp_u32Timeout;                      /* Timeout counter used acro
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
+extern AntSetupDataType G_stAntSetupData;                         /* From ant.c */
+
+extern u32 G_u32AntApiCurrentDataTimeStamp;                       /* From ant_api.c */
+extern AntApplicationMessageType G_eAntApiCurrentMessageClass;    /* From ant_api.c */
+extern u8 G_au8AntApiCurrentData[ANT_APPLICATION_MESSAGE_BYTES];  /* From ant_api.c */
 
 static u8 UserApp_au8MyName[] = "Listen to songs ";
 extern u8 G_au8DebugScanfBuffer[];   
 extern u8 G_u8DebugScanfCharCount; 
 
 static u8 au8UserInputBuffer[USER_INPUT_BUFFER_SIZE];
-static u8 u8namebuffer0[20];
-static u8 u8namebuffer1[20];
-static u8 u8namebuffer2[20];
-static u8 u8namebuffer3[20];
+static u8 u8namebuffer[20];
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Public functions                                                                                                   */
@@ -98,14 +100,28 @@ Promises:
 */
 void UserAppInitialize(void)
 {
+  /* Configure ANT for this application */
+  G_stAntSetupData.AntChannel          = ANT_CHANNEL_USERAPP;
+  G_stAntSetupData.AntSerialLo         = ANT_SERIAL_LO_USERAPP;
+  G_stAntSetupData.AntSerialHi         = ANT_SERIAL_HI_USERAPP;
+  G_stAntSetupData.AntDeviceType       = ANT_DEVICE_TYPE_USERAPP;
+  G_stAntSetupData.AntTransmissionType = ANT_TRANSMISSION_TYPE_USERAPP;
+  G_stAntSetupData.AntChannelPeriodLo  = ANT_CHANNEL_PERIOD_LO_USERAPP;
+  G_stAntSetupData.AntChannelPeriodHi  = ANT_CHANNEL_PERIOD_HI_USERAPP;
+  G_stAntSetupData.AntFrequency        = ANT_FREQUENCY_USERAPP;
+  G_stAntSetupData.AntTxPower          = ANT_TX_POWER_USERAPP;
+  
   LCDMessage(LINE1_START_ADDR, UserApp_au8MyName);
   LCDClearChars(LINE1_START_ADDR +15 , 5);
-   
-  
+  LedOff(LCD_RED);
+  LedOn(LCD_GREEN);
+  LedOn(LCD_BLUE);
   
   /* If good initialization, set state to Idle */
   if( 1 )
   {
+    AntChannelConfig(ANT_SLAVE);
+    AntOpenChannel();
     UserApp_StateMachine = UserAppSM_Idle;
   }
   else
@@ -154,8 +170,9 @@ static void UserAppSM_Idle(void)
   static u8 flag0=FALSE; 
   static u8 flag1=FALSE; 
   static u8 flag2=FALSE; 
-  static u8 flag3=FALSE; 
+  static u8 flag3=FALSE;
   static u16 u16Counter = 480;
+  static u8 BlinkCount=0;
   static u8 i = 0;
   static u8 u8time=0;
   static u8 u8j=0;
@@ -167,18 +184,69 @@ static void UserAppSM_Idle(void)
   static u8 flag10=FALSE; 
   static u8 flag20=FALSE; 
   static u8 flag30=FALSE; 
-  static u8 answer0[20]="little star";
-  static u8 answer1[20]="jingle bells";
-  static u8 answer2[20]="painter";
-  static u8 answer3[20]="dream wedding";
+  static u8 answer0[20]="stars";
+  static u8 answer1[20]="bells";
+  static u8 answer2[20]="paint";
+  static u8 answer3[20]="dream";
   static u8 string0[10]="TRUE";
   static u8 string1[10]="FALSE";
+  static u8 Myanswer[5];
+  static u8 Hermessage[4]="help";
+  static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
+  u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
   
-  LedOn(LCD_RED);
-  LedOff(LCD_GREEN);
-  LedOn(LCD_BLUE);
-  
-  
+   if( AntReadData() )
+   {
+     /* New data message: printf on the LCD */
+      if(G_eAntApiCurrentMessageClass == ANT_DATA)
+      {
+      /* We got some data: parse it into au8DataContent[] */
+      for(u8 i = 0; i < ANT_DATA_BYTES; i++)
+      {
+          au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
+          au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
+      }
+
+     // for(u8 i=0;i<4;i++)
+    //  {
+     //     static u8 u8index;
+          if(Hermessage[i]==G_au8AntApiCurrentData[i])
+          {
+            //LCDClearChars(LINE2_START_ADDR+3,16); 
+            LCDMessage(LINE2_START_ADDR, G_au8AntApiCurrentData);
+            //BlinkCount++;
+          }
+         else
+          {
+              LCDMessage(LINE2_START_ADDR, au8DataContent);
+              // LCDClearChars(LINE2_START_ADDR+3,16); 
+          }
+        //  for(u8index=0;u8index<5;u8index++)
+         // {
+         //    for(u8 a=0;a<10;a++)
+         //   {
+           //    BlinkCount++;
+           //  }
+           //  if(BlinkCount==10)
+           //  {
+           //     BlinkCount=0;
+             DebugScanf(au8UserInputBuffer);
+             //}
+            // Myanswer[u8index]=au8UserInputBuffer[u8index];
+         // }
+         // if(u8index==5)
+         // {
+          AntQueueBroadcastMessage(au8UserInputBuffer);
+          //}
+      }
+    
+    
+    else if(G_eAntApiCurrentMessageClass == ANT_TICK)
+    {
+    
+      
+    }
+  }
    /*Press button0 .The first song.Little Star */
   if(WasButtonPressed(BUTTON0))
   {
@@ -193,7 +261,7 @@ static void UserAppSM_Idle(void)
     char music0[100] = "1111011110555505555066660666605555500444404444033330333302222022220111110";
     u16Counter++; 
   
-    if((u16Counter-500)%100 == 0 && u16Counter < 7700)
+    if((u16Counter-500)%100 == 0 && u16Counter < 7701)
     {
         
           switch(music0[i])
@@ -273,17 +341,17 @@ static void UserAppSM_Idle(void)
         for(u8j=0;u8j<u8CharCount;u8j++)
         {
          LCDMessage (LINE1_START_ADDR+u8CountReally,au8UserInputBuffer);
-         u8namebuffer0[u8j]=au8UserInputBuffer[u8j];
+         u8namebuffer[u8j]=au8UserInputBuffer[u8j];
          u8CountReally++;
           if(u8CountReally==20)
           {
             LCDClearChars(LINE1_START_ADDR,20); 
-            LCDMessage (LINE1_START_ADDR,u8namebuffer0); 
+            LCDMessage (LINE1_START_ADDR,au8UserInputBuffer); 
             u8CountReally=0;
           }
  
           /* Compare */
-          if( answer0[counter]==u8namebuffer0[u8j])
+          if( answer0[counter]==au8UserInputBuffer[u8j])
           {
             counter++;
             if(counter==11)
@@ -326,8 +394,7 @@ static void UserAppSM_Idle(void)
   { 
     char music1[100] = "3303303300003303303300003305501100223300000044044044044044033033003330330220220110222225550";
     u16Counter++; 
-   //LCDMessage(LINE1_START_ADDR, UserApp_au8MyName);
-   // LCDClearChars(LINE1_START_ADDR +15 , 5);
+   
   
     if((u16Counter-500)%100 == 0 && u16Counter < 9701)
     {
@@ -388,7 +455,7 @@ static void UserAppSM_Idle(void)
       LCDClearChars(LINE1_START_ADDR,20);
     }
       /* Print the song name in ddebug */
-    if( (9701 < u16Counter) &&(u16Counter < 24700)  )
+    if( (9700 < u16Counter) &&(u16Counter < 24700)  )
     {
       u8time++;
       if(u8time==10)
@@ -408,17 +475,17 @@ static void UserAppSM_Idle(void)
         for(u8j=0;u8j<u8CharCount;u8j++)
         {
          LCDMessage (LINE1_START_ADDR+u8CountReally,au8UserInputBuffer);
-         u8namebuffer1[u8j]=au8UserInputBuffer[u8j];
+         u8namebuffer[u8j]=au8UserInputBuffer[u8j];
          u8CountReally++;
           if(u8CountReally==20)
           {
             LCDClearChars(LINE1_START_ADDR,20); 
-            LCDMessage (LINE1_START_ADDR,u8namebuffer1); 
+            LCDMessage (LINE1_START_ADDR,au8UserInputBuffer); 
             u8CountReally=0;
           }
  
           /* Compare */
-          if( answer1[counter]==u8namebuffer1[u8j])
+          if( answer1[counter]==au8UserInputBuffer[u8j])
           {
             counter++;
             if(counter==12)
@@ -435,8 +502,8 @@ static void UserAppSM_Idle(void)
       } 
         flag10=FALSE; 
      }
-    }
       
+    }
     if(u16Counter == 24700)
     {
      LedOff(RED);
@@ -523,7 +590,8 @@ static void UserAppSM_Idle(void)
       LedBlink(RED, LED_2HZ);
       LCDClearChars(LINE1_START_ADDR,20);
     }
-     if( (4701 < u16Counter) &&(u16Counter < 19700)  )
+      /* Print the song name in ddebug */
+    if( (4700 < u16Counter) &&(u16Counter < 19700)  )
     {
       u8time++;
       if(u8time==10)
@@ -543,17 +611,17 @@ static void UserAppSM_Idle(void)
         for(u8j=0;u8j<u8CharCount;u8j++)
         {
          LCDMessage (LINE1_START_ADDR+u8CountReally,au8UserInputBuffer);
-         u8namebuffer2[u8j]=au8UserInputBuffer[u8j];
+         u8namebuffer[u8j]=au8UserInputBuffer[u8j];
          u8CountReally++;
           if(u8CountReally==20)
           {
             LCDClearChars(LINE1_START_ADDR,20); 
-            LCDMessage (LINE1_START_ADDR,u8namebuffer2); 
+            LCDMessage (LINE1_START_ADDR,au8UserInputBuffer); 
             u8CountReally=0;
           }
  
           /* Compare */
-          if( answer2[counter]==u8namebuffer2[u8j])
+          if( answer2[counter]==au8UserInputBuffer[u8j])
           {
             counter++;
             if(counter==7)
@@ -570,8 +638,8 @@ static void UserAppSM_Idle(void)
       } 
         flag20=FALSE; 
      }
-    }
       
+    }
      if(u16Counter == 19700)
     {
      LedOff(RED);
@@ -657,14 +725,14 @@ static void UserAppSM_Idle(void)
         i++;
       }
     /* 15 seconds countdown and the red led blink */   
-    if(u16Counter == 23601)
+    if(u16Counter == 23600)
     {
       PWMAudioOff(BUZZER1);
       LedBlink(RED, LED_2HZ);
       LCDClearChars(LINE1_START_ADDR,20);
     }
-     /* Print the song name in ddebug */
-    if( (23601 < u16Counter) &&(u16Counter < 38600)  )
+      /* Print the song name in ddebug */
+    if( (23600 < u16Counter) &&(u16Counter < 38600)  )
     {
       u8time++;
       if(u8time==10)
@@ -684,17 +752,17 @@ static void UserAppSM_Idle(void)
         for(u8j=0;u8j<u8CharCount;u8j++)
         {
          LCDMessage (LINE1_START_ADDR+u8CountReally,au8UserInputBuffer);
-         u8namebuffer3[u8j]=au8UserInputBuffer[u8j];
+         u8namebuffer[u8j]=au8UserInputBuffer[u8j];
          u8CountReally++;
           if(u8CountReally==20)
           {
             LCDClearChars(LINE1_START_ADDR,20); 
-            LCDMessage (LINE1_START_ADDR,u8namebuffer3); 
+            LCDMessage (LINE1_START_ADDR,au8UserInputBuffer); 
             u8CountReally=0;
           }
  
           /* Compare */
-          if( answer3[counter]==u8namebuffer3[u8j])
+          if( answer3[counter]==au8UserInputBuffer[u8j])
           {
             counter++;
             if(counter==13)
@@ -713,7 +781,6 @@ static void UserAppSM_Idle(void)
      }
       
     }
-  
      if(u16Counter == 38600)
     {
      LedOff(RED);
@@ -722,6 +789,11 @@ static void UserAppSM_Idle(void)
      i = 0;
     } 
   }
+  
+  
+
+
+  
   
 } /* end UserAppSM_Idle() */
      
