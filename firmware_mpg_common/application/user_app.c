@@ -167,96 +167,150 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 {  
-  static u8 flag0=FALSE; 
-  static u8 flag1=FALSE; 
-  static u8 flag2=FALSE; 
-  static u8 flag3=FALSE;
-  static u16 u16Counter = 480;
-  static u8 BlinkCount=0;
-  static u8 i = 0;
-  static u8 u8time=0;
-  static u8 u8j=0;
-  static u8 count=0;
-  static u8 counter=0;
-  static u8 u8CharCount=0;
-  static u8 u8CountReally=0;
-  static u8 flag00=FALSE; 
-  static u8 flag10=FALSE; 
-  static u8 flag20=FALSE; 
-  static u8 flag30=FALSE; 
+   bool  music0flag=FALSE; 
+   bool  music1flag=FALSE; 
+   bool  music2flag=FALSE; 
+   bool  music3flag=FALSE;
+   
+   bool scanfflag00=FALSE; 
+   bool scanfflag10=FALSE; 
+   bool scanfflag20=FALSE; 
+   bool scanfflag30=FALSE; 
+   bool countflag=FALSE;
   static u8 answer0[20]="stars";
   static u8 answer1[20]="bells";
   static u8 answer2[20]="paint";
   static u8 answer3[20]="dream";
   static u8 string0[10]="TRUE";
   static u8 string1[10]="FALSE";
-  static u8 Myanswer[5];
-  static u8 Hermessage[4]="help";
+   static u8 Hermessage[4]="help";
+   static u8 Myanswer[]="stars"; 
+  
+  static u16 u16Counter = 480;
+  static u16 u16BlinkCount=0;/*debug scanf time count*/
+  static u8 musicindex = 0;
+  static u8 u8time=0;
+  static u8 counter=0;
+  static u8 u8CharCount=0;
+  static u8 u8CountReally=0;
+  static u8 bGotnewdata=0;
+  static u8 au8lastdata[8];
+  static u8 u8newdata=0;
+  static u8 u8newhelp=0;
+  static u8  u8dataadj=0;/*send my answer*/
+  
+  static u8 u8scancount=0;
+ 
   static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
+ 
   u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
   
-   if( AntReadData() )
-   {
-     /* New data message: printf on the LCD */
-      if(G_eAntApiCurrentMessageClass == ANT_DATA)
+  
+ /* New data message*/
+ if( AntReadData() )
+ {
+     static u8 u8index=0;
+     if(G_eAntApiCurrentMessageClass == ANT_DATA)
       {
-      /* We got some data: parse it into au8DataContent[] */
-      for(u8 i = 0; i < ANT_DATA_BYTES; i++)
-      {
-          au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
-          au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
-      }
+            /* We got some data: parse it into au8DataContent[] */
+            u8newdata=0;
+            for(u8 i = 0; i < ANT_DATA_BYTES; i++)
+            {
+                  au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
+                  au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
+            }
+            /*judge the new data if as the same as the last data*/
+            for(u8 i = 0; i < ANT_DATA_BYTES; i++)
+            {
+                if (au8lastdata[i] != G_au8AntApiCurrentData[i])
+                {
+                  u8newdata=1; 
+                  au8lastdata[i]=G_au8AntApiCurrentData[i];
+                }
 
-     // for(u8 i=0;i<4;i++)
-    //  {
-     //     static u8 u8index;
-          if(Hermessage[i]==G_au8AntApiCurrentData[i])
+            }
+          /*judge receive what*/
+          if( u8newdata==1)
           {
-            //LCDClearChars(LINE2_START_ADDR+3,16); 
-            LCDMessage(LINE2_START_ADDR, G_au8AntApiCurrentData);
-            //BlinkCount++;
+            u8dataadj=0;  
+            u8newdata=0;
+            for(u8 i=0;i<4;i++)
+             {
+                  if(Hermessage[i]==G_au8AntApiCurrentData[i])
+                   {
+                      u8dataadj=1;
+                    }
+           
+                    else
+                    {
+                          u8dataadj=0;  
+                     }
+              }
+           /*send my answer*/
+            if(u8dataadj==1)
+            {
+               LCDClearChars(LINE2_START_ADDR,20);
+               LCDMessage(LINE2_START_ADDR, G_au8AntApiCurrentData);
+               u8newhelp=1;
+               u8scancount=0;
+               DebugScanf(au8UserInputBuffer);
+            }
+            else
+            {
+             
+               LCDMessage(LINE2_START_ADDR, G_au8AntApiCurrentData);
+            }
+         
           }
-         else
-          {
-              LCDMessage(LINE2_START_ADDR, au8DataContent);
-              // LCDClearChars(LINE2_START_ADDR+3,16); 
-          }
-        //  for(u8index=0;u8index<5;u8index++)
-         // {
-         //    for(u8 a=0;a<10;a++)
-         //   {
-           //    BlinkCount++;
-           //  }
-           //  if(BlinkCount==10)
-           //  {
-           //     BlinkCount=0;
-             DebugScanf(au8UserInputBuffer);
-             //}
-            // Myanswer[u8index]=au8UserInputBuffer[u8index];
-         // }
-         // if(u8index==5)
-         // {
-          AntQueueBroadcastMessage(au8UserInputBuffer);
-          //}
-      }
-    
-    
-    else if(G_eAntApiCurrentMessageClass == ANT_TICK)
-    {
-    
-      
-    }
+      }/*end ANT_DATA*/
+      else if(G_eAntApiCurrentMessageClass == ANT_TICK)
+      {
+    /*send my answer to master*/
+        if(bGotnewdata==1)
+        {
+          
+            bGotnewdata=0;
+            AntQueueBroadcastMessage(Myanswer); 
+        }
+      }/*end ANT_TICK*/
   }
-   /*Press button0 .The first song.Little Star */
+ 
+/*printf my answer in the tera term*/
+if(u8newhelp==1)
+{
+    if(u16BlinkCount++>20)
+    {
+        u16BlinkCount=0;
+        u8 u8tempcount=DebugScanf(au8UserInputBuffer);
+        if(u8tempcount!=0)
+        {
+             for(u8 i=0;i<u8tempcount;i++)
+             {
+                Myanswer[u8scancount+i]=au8UserInputBuffer[i];
+             }
+             u8scancount+=u8tempcount;
+                   
+        }
+        if(u8scancount>=5)
+        {
+              u8newhelp=0;
+              bGotnewdata=1;
+        }
+    }
+}/*end my answer*/
+
+
+
+ /*Press button0 .The first song.Little Star */
   if(WasButtonPressed(BUTTON0))
   {
     ButtonAcknowledge(BUTTON0);
-    flag0=TRUE;
+    music0flag=TRUE;
     u8CountReally=0;
     counter=0;
     LCDClearChars(LINE2_START_ADDR,20); 
   }
-  if(flag0)
+  if(music0flag)
   { 
     char music0[100] = "1111011110555505555066660666605555500444404444033330333302222022220111110";
     u16Counter++; 
@@ -264,7 +318,7 @@ static void UserAppSM_Idle(void)
     if((u16Counter-500)%100 == 0 && u16Counter < 7701)
     {
         
-          switch(music0[i])
+          switch(music0[musicindex])
         {
           case '1': PWMAudioOn(BUZZER1);
                   PWMAudioSetFrequency(BUZZER1, 533);
@@ -309,7 +363,7 @@ static void UserAppSM_Idle(void)
                     LedOff(ORANGE);
                     break;                  
         }
-        i++;
+        musicindex++;
      }
       
     if(u16Counter == 7700)
@@ -318,30 +372,30 @@ static void UserAppSM_Idle(void)
       PWMAudioOff(BUZZER2);
       LedBlink(RED, LED_2HZ);
       LCDClearChars(LINE1_START_ADDR,20);
-    }
+    }/*end the song*/
     
-     /* Print the song name in ddebug */
+ /* Print the song name in ddebug */
     if( (7700 < u16Counter) &&(u16Counter < 22700)  )
     {
       u8time++;
       if(u8time==10)
       {
        u8time=0;
-       flag00=TRUE;
+       scanfflag00=TRUE;
       }
       else
       {
-       flag00=FALSE;
+       scanfflag00=FALSE;
       }
-      if(flag00)
+      if(scanfflag00)
       {
         /* Read the buffer and print the contents */
         u8CharCount = DebugScanf(au8UserInputBuffer);
         au8UserInputBuffer[u8CharCount] = '\0';
-        for(u8j=0;u8j<u8CharCount;u8j++)
+        for(u8 j=0;j<u8CharCount;j++)
         {
          LCDMessage (LINE1_START_ADDR+u8CountReally,au8UserInputBuffer);
-         u8namebuffer[u8j]=au8UserInputBuffer[u8j];
+         u8namebuffer[j]=au8UserInputBuffer[j];
          u8CountReally++;
           if(u8CountReally==20)
           {
@@ -350,14 +404,17 @@ static void UserAppSM_Idle(void)
             u8CountReally=0;
           }
  
-          /* Compare */
-          if( answer0[counter]==au8UserInputBuffer[u8j])
+          /* Compare the pressupposed answer with the person's answer*/
+          if( answer0[counter]==au8UserInputBuffer[j])
           {
             counter++;
             if(counter==11)
             {
               LCDMessage (LINE2_START_ADDR,string0);
               LCDClearChars(LINE2_START_ADDR+4,16);
+              LedOn(LCD_RED);
+              LedOff(LCD_GREEN);
+              LedOn(LCD_BLUE);
             }
           }
           else
@@ -366,7 +423,7 @@ static void UserAppSM_Idle(void)
             LCDClearChars(LINE2_START_ADDR+5,15); 
           }
       } 
-        flag00=FALSE; 
+        scanfflag00=FALSE; 
      }
       
     }
@@ -374,23 +431,23 @@ static void UserAppSM_Idle(void)
     if(u16Counter == 22700)
     {
      LedOff(RED);
-     flag0=FALSE;
+     music0flag=FALSE;
      u16Counter=480;
-     i = 0;
+     musicindex = 0;
     }
   }
  
  
-  /*Press button1 .The second song.Jingle Bells  */
+/*Press button1 .The second song.Jingle Bells  */
   if(WasButtonPressed(BUTTON1))
   {
     ButtonAcknowledge(BUTTON1);
-    flag1=TRUE;
+    music1flag=TRUE;
     u8CountReally=0;
     counter=0;
     LCDClearChars(LINE2_START_ADDR,20); 
   }
-  if(flag1)
+  if(music1flag)
   { 
     char music1[100] = "3303303300003303303300003305501100223300000044044044044044033033003330330220220110222225550";
     u16Counter++; 
@@ -399,7 +456,7 @@ static void UserAppSM_Idle(void)
     if((u16Counter-500)%100 == 0 && u16Counter < 9701)
     {
         
-          switch(music1[i])
+          switch(music1[musicindex])
         {
           case '1': PWMAudioOn(BUZZER1);
                   PWMAudioSetFrequency(BUZZER1, 533);
@@ -445,7 +502,7 @@ static void UserAppSM_Idle(void)
                   LedOff(ORANGE);
                   break;                  
         }
-        i++;
+        musicindex++;
       }
       
     if(u16Counter == 9700)
@@ -453,7 +510,8 @@ static void UserAppSM_Idle(void)
       PWMAudioOff(BUZZER1);
       LedBlink(RED, LED_2HZ);
       LCDClearChars(LINE1_START_ADDR,20);
-    }
+    }/*end the song*/
+    
       /* Print the song name in ddebug */
     if( (9700 < u16Counter) &&(u16Counter < 24700)  )
     {
@@ -461,21 +519,21 @@ static void UserAppSM_Idle(void)
       if(u8time==10)
       {
        u8time=0;
-       flag10=TRUE;
+       scanfflag10=TRUE;
       }
       else
       {
-       flag10=FALSE;
+       scanfflag10=FALSE;
       }
-      if(flag10)
+      if(scanfflag10)
       {
         /* Read the buffer and print the contents */
         u8CharCount = DebugScanf(au8UserInputBuffer);
         au8UserInputBuffer[u8CharCount] = '\0';
-        for(u8j=0;u8j<u8CharCount;u8j++)
+        for(u8 j=0;j<u8CharCount;j++)
         {
          LCDMessage (LINE1_START_ADDR+u8CountReally,au8UserInputBuffer);
-         u8namebuffer[u8j]=au8UserInputBuffer[u8j];
+         u8namebuffer[j]=au8UserInputBuffer[j];
          u8CountReally++;
           if(u8CountReally==20)
           {
@@ -484,8 +542,8 @@ static void UserAppSM_Idle(void)
             u8CountReally=0;
           }
  
-          /* Compare */
-          if( answer1[counter]==au8UserInputBuffer[u8j])
+       /* Compare the pressupposed answer with the person's answer*/
+          if( answer1[counter]==au8UserInputBuffer[j])
           {
             counter++;
             if(counter==12)
@@ -500,30 +558,30 @@ static void UserAppSM_Idle(void)
             LCDClearChars(LINE2_START_ADDR+5,15); 
           }
       } 
-        flag10=FALSE; 
+        scanfflag10=FALSE; 
      }
       
     }
     if(u16Counter == 24700)
     {
      LedOff(RED);
-     flag1=FALSE;
+     music1flag=FALSE;
      u16Counter=480;
-     i = 0;
+     musicindex = 0;
     }
    
   }
   
-  /*Press button2 .The third song.Painter */
+ /*Press button2 .The third song.Painter */
   if(WasButtonPressed(BUTTON2))
   {
     ButtonAcknowledge(BUTTON2);
-    flag2=TRUE;
+    music2flag=TRUE;
     u8CountReally=0;
     counter=0;
     LCDClearChars(LINE2_START_ADDR,20); 
   }
-  if(flag2)
+  if(music2flag)
   { 
     char music2[100] ="555333555333555333111110222444333222555550";
     u16Counter++; 
@@ -531,7 +589,7 @@ static void UserAppSM_Idle(void)
     if((u16Counter-500)%100 == 0 && u16Counter < 4701)
     {
         
-          switch(music2[i])
+          switch(music2[musicindex])
         {
           case '1': PWMAudioOn(BUZZER1);
                   PWMAudioSetFrequency(BUZZER1, 533);
@@ -581,7 +639,7 @@ static void UserAppSM_Idle(void)
                   LedOff(ORANGE);
                   break;                  
         }
-        i++;
+        musicindex++;
       }
       
     if(u16Counter == 4700)
@@ -589,7 +647,8 @@ static void UserAppSM_Idle(void)
       PWMAudioOff(BUZZER1);
       LedBlink(RED, LED_2HZ);
       LCDClearChars(LINE1_START_ADDR,20);
-    }
+    }/*end the song*/
+    
       /* Print the song name in ddebug */
     if( (4700 < u16Counter) &&(u16Counter < 19700)  )
     {
@@ -597,21 +656,21 @@ static void UserAppSM_Idle(void)
       if(u8time==10)
       {
        u8time=0;
-       flag20=TRUE;
+       scanfflag20=TRUE;
       }
       else
       {
-       flag20=FALSE;
+       scanfflag20=FALSE;
       }
-      if(flag20)
+      if(scanfflag20)
       {
         /* Read the buffer and print the contents */
         u8CharCount = DebugScanf(au8UserInputBuffer);
         au8UserInputBuffer[u8CharCount] = '\0';
-        for(u8j=0;u8j<u8CharCount;u8j++)
+        for(u8 j=0;j<u8CharCount;j++)
         {
          LCDMessage (LINE1_START_ADDR+u8CountReally,au8UserInputBuffer);
-         u8namebuffer[u8j]=au8UserInputBuffer[u8j];
+         u8namebuffer[j]=au8UserInputBuffer[j];
          u8CountReally++;
           if(u8CountReally==20)
           {
@@ -620,8 +679,8 @@ static void UserAppSM_Idle(void)
             u8CountReally=0;
           }
  
-          /* Compare */
-          if( answer2[counter]==au8UserInputBuffer[u8j])
+          /* Compare the pressupposed answer with the person's answer*/
+          if( answer2[counter]==au8UserInputBuffer[j])
           {
             counter++;
             if(counter==7)
@@ -636,29 +695,30 @@ static void UserAppSM_Idle(void)
             LCDClearChars(LINE2_START_ADDR+5,15); 
           }
       } 
-        flag20=FALSE; 
+        scanfflag20=FALSE; 
      }
       
     }
      if(u16Counter == 19700)
     {
      LedOff(RED);
-     flag2=FALSE;
+     music2flag=FALSE;
      u16Counter=480;
-     i = 0;
+     musicindex = 0;
     }
    
   }
+ 
   /*Press button3 .The fourth song.Dream Wedding   */
   if(WasButtonPressed(BUTTON3))
   {
     ButtonAcknowledge(BUTTON3);
-    flag3=TRUE;
+    music3flag=TRUE;
     u8CountReally=0;
     counter=0;
     LCDClearChars(LINE2_START_ADDR,20); 
   }
-  if(flag3)
+  if(music3flag)
   { 
     char music3[100] = "30813230813230814340814340434450565630030813230813230814340814340434450565630";
     u16Counter++; 
@@ -666,7 +726,7 @@ static void UserAppSM_Idle(void)
     if((u16Counter-500)%300 == 0 && (u16Counter < 23601) )
     {
         
-          switch(music3[i])
+          switch(music3[musicindex])
         {
           case '1': PWMAudioOn(BUZZER1);
                   PWMAudioSetFrequency(BUZZER1, 1046);
@@ -722,7 +782,7 @@ static void UserAppSM_Idle(void)
                   LedOff(ORANGE);
                   break;                  
         }
-        i++;
+        musicindex++;
       }
     /* 15 seconds countdown and the red led blink */   
     if(u16Counter == 23600)
@@ -730,7 +790,8 @@ static void UserAppSM_Idle(void)
       PWMAudioOff(BUZZER1);
       LedBlink(RED, LED_2HZ);
       LCDClearChars(LINE1_START_ADDR,20);
-    }
+    }/*end the song*/
+    
       /* Print the song name in ddebug */
     if( (23600 < u16Counter) &&(u16Counter < 38600)  )
     {
@@ -738,21 +799,21 @@ static void UserAppSM_Idle(void)
       if(u8time==10)
       {
        u8time=0;
-       flag30=TRUE;
+       scanfflag30=TRUE;
       }
       else
       {
-       flag30=FALSE;
+       scanfflag30=FALSE;
       }
-      if(flag30)
+      if(scanfflag30)
       {
         /* Read the buffer and print the contents */
         u8CharCount = DebugScanf(au8UserInputBuffer);
         au8UserInputBuffer[u8CharCount] = '\0';
-        for(u8j=0;u8j<u8CharCount;u8j++)
+        for(u8 j=0;j<u8CharCount;j++)
         {
          LCDMessage (LINE1_START_ADDR+u8CountReally,au8UserInputBuffer);
-         u8namebuffer[u8j]=au8UserInputBuffer[u8j];
+         u8namebuffer[j]=au8UserInputBuffer[j];
          u8CountReally++;
           if(u8CountReally==20)
           {
@@ -761,8 +822,8 @@ static void UserAppSM_Idle(void)
             u8CountReally=0;
           }
  
-          /* Compare */
-          if( answer3[counter]==au8UserInputBuffer[u8j])
+         /* Compare the pressupposed answer with the person's answer*/
+          if( answer3[counter]==au8UserInputBuffer[j])
           {
             counter++;
             if(counter==13)
@@ -777,23 +838,18 @@ static void UserAppSM_Idle(void)
             LCDClearChars(LINE2_START_ADDR+5,15); 
           }
       } 
-        flag30=FALSE; 
+        scanfflag30=FALSE; 
      }
       
     }
      if(u16Counter == 38600)
     {
      LedOff(RED);
-     flag3=FALSE;
+     music3flag=FALSE;
      u16Counter=480;
-     i = 0;
+     musicindex = 0;
     } 
   }
-  
-  
-
-
-  
   
 } /* end UserAppSM_Idle() */
      
